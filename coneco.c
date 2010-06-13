@@ -10,7 +10,7 @@ void cnl_debug_print(CNL_OBJ *obj){
 	if(CNL_NIL_P(obj)){
 		printf("NIL");
 	}else{
-		switch(obj->type){
+		switch(CNL_TYPE(obj)){
 			case CNL_TYPE_UNDEF : printf("UNDEF"); break;
 			case CNL_TYPE_SYNTAX : printf("SYNTAX"); break;
 			case CNL_TYPE_FUNC : printf("FUNC"); break;

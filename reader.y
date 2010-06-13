@@ -25,7 +25,7 @@ int main(int argc,char** argv){
 %token <string> SYMBOL
 %type <obj> sexp atom nil num symbol pair list lend
 %%
-program: | program sexp { cnl_debug_print(cnl_eval(cnl_gc,cnl_bind,$2)); } ;
+program: | program sexp { cnl_debug_print(cnl_eval(cnl_gc,cnl_bind,$2)); putchar('\n'); } ;
 sexp: atom | pair | list;
 atom: nil | num | symbol ;
 nil: NIL { $$ = CNL_NIL; } ;

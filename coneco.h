@@ -3,12 +3,13 @@
 
 #define CNL_NIL ((CNL_OBJ*)0)
 #define CNL_NIL_P(x) ((x) == CNL_NIL)
-#define CNL_PAIR_P(x) (((x) == CNL_NIL) ? 0 : (x)->type == CNL_TYPE_PAIR)
-#define CNL_SYMBOL_P(x) (((x) == CNL_NIL) ? 0 : (x)->type == CNL_TYPE_SYMBOL)
-#define CNL_SYNTAX_P(x) (((x) == CNL_NIL) ? 0 : (x)->type == CNL_TYPE_SYNTAX)
-#define CNL_NUMBER_P(x) (((x) == CNL_NIL) ? 0 : (x)->type == CNL_TYPE_NUMBER)
-#define CNL_FUNC_P(x) (((x) == CNL_NIL) ? 0 : (x)->type == CNL_TYPE_FUNC)
-#define CNL_PROC_P(x) (((x) == CNL_NIL) ? 0 : (x)->type == CNL_TYPE_PROC)
+#define CNL_TYPE(x) ((x)->type & 0xFF)
+#define CNL_PAIR_P(x) (((x) == CNL_NIL) ? 0 : CNL_TYPE(x) == CNL_TYPE_PAIR)
+#define CNL_SYMBOL_P(x) (((x) == CNL_NIL) ? 0 : CNL_TYPE(x) == CNL_TYPE_SYMBOL)
+#define CNL_SYNTAX_P(x) (((x) == CNL_NIL) ? 0 : CNL_TYPE(x) == CNL_TYPE_SYNTAX)
+#define CNL_NUMBER_P(x) (((x) == CNL_NIL) ? 0 : CNL_TYPE(x) == CNL_TYPE_NUMBER)
+#define CNL_FUNC_P(x) (((x) == CNL_NIL) ? 0 : CNL_TYPE(x) == CNL_TYPE_FUNC)
+#define CNL_PROC_P(x) (((x) == CNL_NIL) ? 0 : CNL_TYPE(x) == CNL_TYPE_PROC)
 #define CNL_CAR(x) ((CNL_PAIR_P(x) || CNL_PROC_P(x)) ? ((CNL_OBJ*)(x)->o.pair.car) : CNL_NIL)
 #define CNL_CDR(x) ((CNL_PAIR_P(x) || CNL_PROC_P(x)) ? ((CNL_OBJ*)(x)->o.pair.cdr) : CNL_NIL)
 #define CNL_CAAR(x) CNL_CAR(CNL_CAR(x))
@@ -59,8 +60,6 @@ typedef struct _CNL_OBJ {
 } CNL_OBJ;
 
 typedef struct _CNL_GC {
-	unsigned int no;
-	unsigned int index;
 	unsigned int size;
 	CNL_OBJ **buf;
 } CNL_GC;
