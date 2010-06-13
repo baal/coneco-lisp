@@ -85,6 +85,7 @@ CNL_OBJ* cnl_make_default_binds(CNL_GC *gc){
 	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"if"),cnl_make_syntax(gc,CNL_SYNTAX_IF)),bind);
 	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"lambda"),cnl_make_syntax(gc,CNL_SYNTAX_LAMBDA)),bind);
 	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"quote"),cnl_make_syntax(gc,CNL_SYNTAX_QUOTE)),bind);
+	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"sweep"),cnl_make_syntax(gc,CNL_SYNTAX_SWEEP)),bind);
 	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"cons"),cnl_make_function(gc,cnl_func_cons)),bind);
 	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"car"),cnl_make_function(gc,cnl_func_car)),bind);
 	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"cdr"),cnl_make_function(gc,cnl_func_cdr)),bind);
@@ -458,6 +459,24 @@ CNL_OBJ* cnl_eval(CNL_GC *gc,CNL_OBJ *bind,CNL_OBJ *obj){
 					}
 					/* ENV POP END */
 					/* SYNTAX quote END */
+				}else if(CNL_SYNTAX(CNL_CADAR(bind)) == CNL_SYNTAX_SWEEP){
+					/* SYNTAX sweep BEGIN */
+					cnl_gc_sweep(gc,env);
+					ret = CNL_NIL;
+					/* ENV POP BEGIN */
+					env = CNL_CDR(env);
+					if(CNL_PAIR_P(env)){
+						bind = CNL_CAAR(env);
+						args = CNL_CAR(bind);
+						CNL_NUMBER(CNL_CAR(args))++;
+						while(CNL_PAIR_P(CNL_CDR(args))){
+							args = CNL_CDR(args);
+						}
+						CNL_SET_CDR(args,cnl_cons(gc,ret,CNL_CDR(args)));
+						ret = CNL_NIL;
+					}
+					/* ENV POP END */
+					/* SYNTAX sweep END */
 				}else{
 					ret = cnl_make_undef(gc);
 					/* ENV POP BEGIN */
