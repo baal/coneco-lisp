@@ -89,6 +89,10 @@ CNL_OBJ* cnl_make_default_binds(CNL_GC *gc){
 	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"cons"),cnl_make_function(gc,cnl_func_cons)),bind);
 	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"car"),cnl_make_function(gc,cnl_func_car)),bind);
 	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"cdr"),cnl_make_function(gc,cnl_func_cdr)),bind);
+	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"set-car!"),cnl_make_function(gc,cnl_func_set_car)),bind);
+	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"set-cdr!"),cnl_make_function(gc,cnl_func_set_cdr)),bind);
+	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"pair?"),cnl_make_function(gc,cnl_func_pair_p)),bind);
+	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"null?"),cnl_make_function(gc,cnl_func_null_p)),bind);
 	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"+"),cnl_make_function(gc,cnl_func_number_add)),bind);
 	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"-"),cnl_make_function(gc,cnl_func_number_sub)),bind);
 	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"*"),cnl_make_function(gc,cnl_func_number_mul)),bind);
@@ -134,6 +138,50 @@ CNL_OBJ* cnl_func_car(CNL_GC *gc,CNL_OBJ *args){
 
 CNL_OBJ* cnl_func_cdr(CNL_GC *gc,CNL_OBJ *args){
 	return CNL_CDAR(args);
+}
+
+CNL_OBJ* cnl_func_set_car(CNL_GC *gc,CNL_OBJ *args){
+	if(CNL_PAIR_P(args)){
+		CNL_OBJ* obj = CNL_CAR(args);
+		if(CNL_PAIR_P(obj) || CNL_PROC_P(obj)){
+			CNL_SET_CAR(obj,CNL_CADR(args));
+			return obj;
+		}
+	}
+	return CNL_NIL;
+}
+
+CNL_OBJ* cnl_func_set_cdr(CNL_GC *gc,CNL_OBJ *args){
+	if(CNL_PAIR_P(args)){
+		CNL_OBJ* obj = CNL_CAR(args);
+		if(CNL_PAIR_P(obj) || CNL_PROC_P(obj)){
+			CNL_SET_CDR(obj,CNL_CADR(args));
+			return obj;
+		}
+	}
+	return CNL_NIL;
+}
+
+CNL_OBJ* cnl_func_pair_p(CNL_GC *gc,CNL_OBJ *args){
+	CNL_OBJ *ls = args;
+	while(CNL_PAIR_P(ls)){
+		if(! CNL_PAIR_P(CNL_CAR(ls))){
+			return CNL_NIL;
+		}
+		ls = CNL_CDR(ls);
+	}
+	return cnl_make_number(gc,1);
+}
+
+CNL_OBJ* cnl_func_null_p(CNL_GC *gc,CNL_OBJ *args){
+	CNL_OBJ *ls = args;
+	while(CNL_PAIR_P(ls)){
+		if(! CNL_NIL_P(CNL_CAR(ls))){
+			return CNL_NIL;
+		}
+		ls = CNL_CDR(ls);
+	}
+	return cnl_make_number(gc,1);
 }
 
 CNL_OBJ* cnl_func_number_add(CNL_GC *gc,CNL_OBJ *args){
@@ -217,7 +265,7 @@ CNL_OBJ* cnl_func_number_equal_p(CNL_GC *gc,CNL_OBJ* args){
 		}
 		ls = CNL_CDR(ls);
 	}
-	return CNL_CAR(args);
+	return cnl_make_number(gc,1);
 }
 
 CNL_OBJ* cnl_func_number_greater_p(CNL_GC *gc,CNL_OBJ* args){
@@ -243,7 +291,7 @@ CNL_OBJ* cnl_func_number_greater_p(CNL_GC *gc,CNL_OBJ* args){
 		}
 		ls = CNL_CDR(ls);
 	}
-	return CNL_CAR(args);
+	return cnl_make_number(gc,1);
 }
 
 CNL_OBJ* cnl_func_number_less_p(CNL_GC *gc,CNL_OBJ* args){
@@ -269,7 +317,7 @@ CNL_OBJ* cnl_func_number_less_p(CNL_GC *gc,CNL_OBJ* args){
 		}
 		ls = CNL_CDR(ls);
 	}
-	return CNL_CAR(args);
+	return cnl_make_number(gc,1);
 }
 
 CNL_OBJ* cnl_eval(CNL_GC *gc,CNL_OBJ *bind,CNL_OBJ *obj){
