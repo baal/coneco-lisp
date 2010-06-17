@@ -559,18 +559,35 @@ CNL_OBJ* cnl_eval(CNL_GC *gc,CNL_OBJ *bind,CNL_OBJ *obj){
 						CNL_OBJ* names = CNL_CADDR(proc);
 						CNL_OBJ* values = CNL_CDDAR(bind);
 						bind = CNL_CAR(proc);
+						args = CNL_NIL;
+						int flag;
+						while(CNL_PAIR_P(bind)){
+							flag = 0;
+							tmp = names;
+							while(CNL_PAIR_P(tmp)){
+								if(cnl_symbol_equal_p(CNL_CAAR(bind),CNL_CAR(tmp))){
+									flag = 1;
+								}
+								tmp = CNL_CDR(tmp);
+							}
+							if(! flag){
+								args = cnl_cons(gc,CNL_CAR(bind),args);
+							}
+							bind = CNL_CDR(bind);
+						}
 						while(CNL_PAIR_P(names)){
 							if(CNL_PAIR_P(values)){
-								bind = cnl_cons(gc,cnl_cons(gc,CNL_CAR(names),CNL_CAR(values)),bind);
+								args = cnl_cons(gc,cnl_cons(gc,CNL_CAR(names),CNL_CAR(values)),args);
 								values = CNL_CDR(values);
 							}else{
-								bind = cnl_cons(gc,cnl_cons(gc,CNL_CAR(names),CNL_NIL),bind);
+								args = cnl_cons(gc,cnl_cons(gc,CNL_CAR(names),CNL_NIL),args);
 							}
 							names = CNL_CDR(names);
 						}
 						if(! CNL_NIL_P(names)){
-							bind = cnl_cons(gc,cnl_cons(gc,names,values),bind);
+							args = cnl_cons(gc,cnl_cons(gc,names,values),args);
 						}
+						bind = args;
 						/* ENV PUSH BEGIN */
 						bind = cnl_cons(gc,cnl_cons(gc,cnl_make_number(gc,1),cnl_cons(gc,cnl_make_syntax(gc,CNL_SYNTAX_BEGIN),CNL_NIL)),bind);
 						targ = cnl_cons(gc,cnl_make_symbol(gc,"begin"),CNL_CDDDR(proc));

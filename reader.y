@@ -27,7 +27,7 @@ int main(int argc,char** argv){
 %%
 program: | program sexp { cnl_debug_print(cnl_eval(cnl_gc,cnl_bind,$2)); putchar('\n'); } ;
 sexp: atom | pair | list;
-atom: nil | num | symbol ;
+atom: nil | num | symbol;
 nil: NIL { $$ = CNL_NIL; } ;
 num: NUMBER { $$ = cnl_make_number(cnl_gc,$1); } ;
 symbol: SYMBOL { $$ = cnl_make_symbol(cnl_gc,$1); } ;
