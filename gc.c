@@ -103,15 +103,35 @@ void cnl_gc_sweep(CNL_GC *gc,struct _CNL_OBJ *env){
 		}
 	}
 	free(buf);
+	count = 0;
 	for(i = 0; i < gc->size; i++){
 		if(gc->buf[i]){
 			if((gc->buf[i]->type & 0x10) == 0x10){
+				count++;
 				switch(CNL_TYPE(gc->buf[i])){
-				case CNL_TYPE_SYMBOL : free(gc->buf[i]->o.str); break;
-				case CNL_TYPE_STRING : free(gc->buf[i]->o.str); break;
+				case CNL_TYPE_SYMBOL : free(gc->buf[i]->o.str); gc->buf[i]->o.str = NULL; break;
+				case CNL_TYPE_STRING : free(gc->buf[i]->o.str); gc->buf[i]->o.str = NULL; break;
 				}
 			}
 		}
+	}
+	if(count >= (CNL_GC_BUFSIZ * 2)){
+		int newsize = gc->size - CNL_GC_BUFSIZ;
+		CNL_OBJ **newbuf = (struct _CNL_OBJ **)malloc(sizeof(struct _CNL_OBJ *) * newsize);
+		int index = 0;
+		for(i = 0; i < gc->size; i++){
+			if((gc->buf[i]->type & 0x10) == 0x10){
+				free(gc->buf[i]);
+			}else{
+				newbuf[index++] = gc->buf[i];
+			}
+		}
+		while(index < newsize){
+			newbuf[index++] = NULL;
+		}
+		free(gc->buf);
+		gc->size = newsize;
+		gc->buf = newbuf;
 	}
 	cnl_gc_debug_print(gc);
 }

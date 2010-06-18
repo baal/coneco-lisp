@@ -322,6 +322,8 @@ CNL_OBJ* cnl_func_number_less_p(CNL_GC *gc,CNL_OBJ* args){
 
 CNL_OBJ* cnl_eval(CNL_GC *gc,CNL_OBJ *bind,CNL_OBJ *obj){
 
+	int gc_count = 0;
+
 	CNL_OBJ *ret;
 	CNL_OBJ *env;
 	CNL_OBJ *tmp;
@@ -662,6 +664,10 @@ CNL_OBJ* cnl_eval(CNL_GC *gc,CNL_OBJ *bind,CNL_OBJ *obj){
 				ret = CNL_NIL;
 			}
 			/* ENV POP END */
+		}
+		if(++gc_count > 128){
+			cnl_gc_sweep(gc,env);
+			gc_count = 0;
 		}
 	}
 
