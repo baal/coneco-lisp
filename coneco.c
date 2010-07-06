@@ -11,8 +11,8 @@ void cnl_debug_print(CNL_OBJ *obj){
 		printf("NIL");
 	}else{
 		switch(CNL_TYPE(obj)){
-			case CNL_TYPE_UNDEF : printf("UNDEF"); break;
 			case CNL_TYPE_SYNTAX : printf("SYNTAX"); break;
+			case CNL_TYPE_MACRO : printf("MACRO"); break;
 			case CNL_TYPE_FUNC : printf("FUNC"); break;
 			case CNL_TYPE_PROC : printf("PROC"); break;
 			case CNL_TYPE_PAIR :
@@ -33,12 +33,6 @@ CNL_OBJ* cnl_cons(CNL_GC *gc,CNL_OBJ *left,CNL_OBJ *right){
 	CNL_SET_CAR(pair,left);
 	CNL_SET_CDR(pair,right);
 	return pair;
-}
-
-CNL_OBJ* cnl_make_undef(CNL_GC *gc){
-	CNL_OBJ *undef = cnl_make_obj(gc);
-	undef->type = CNL_TYPE_UNDEF;
-	return undef;
 }
 
 CNL_OBJ* cnl_make_number(CNL_GC *gc,long n){
@@ -86,6 +80,7 @@ CNL_OBJ* cnl_make_default_binds(CNL_GC *gc){
 	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"lambda"),cnl_make_syntax(gc,CNL_SYNTAX_LAMBDA)),bind);
 	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"quote"),cnl_make_syntax(gc,CNL_SYNTAX_QUOTE)),bind);
 	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"sweep"),cnl_make_syntax(gc,CNL_SYNTAX_SWEEP)),bind);
+	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"macro"),cnl_make_function(gc,cnl_func_macro)),bind);
 	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"cons"),cnl_make_function(gc,cnl_func_cons)),bind);
 	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"car"),cnl_make_function(gc,cnl_func_car)),bind);
 	bind = cnl_cons(gc,cnl_cons(gc,cnl_make_symbol(gc,"cdr"),cnl_make_function(gc,cnl_func_cdr)),bind);
@@ -122,6 +117,15 @@ CNL_OBJ* cnl_func_call(CNL_GC *gc,CNL_OBJ *s){
 	CNL_OBJ* args = CNL_CDR(s);
 	CNL_OBJ* (*f)(CNL_GC*,CNL_OBJ*) = func->o.func;
 	return f(gc,args);
+}
+
+CNL_OBJ* cnl_func_macro(CNL_GC *gc,CNL_OBJ *args){
+	CNL_OBJ* proc = CNL_CAR(args);
+	if(CNL_PROC_P(proc)){
+		proc->type = CNL_TYPE_MACRO;
+		return proc;
+	}
+	return CNL_NIL;
 }
 
 CNL_OBJ* cnl_func_cons(CNL_GC *gc,CNL_OBJ *args){
@@ -420,7 +424,7 @@ CNL_OBJ* cnl_eval(CNL_GC *gc,CNL_OBJ *bind,CNL_OBJ *obj){
 								CNL_SET_CAR(CNL_CDR(bind),tmp);
 							}
 						}
-						ret = cnl_make_undef(gc);
+						ret = CNL_NIL;
 						/* ENV POP BEGIN */
 						env = CNL_CDR(env);
 						if(CNL_PAIR_P(env)){
@@ -447,7 +451,7 @@ CNL_OBJ* cnl_eval(CNL_GC *gc,CNL_OBJ *bind,CNL_OBJ *obj){
 						if(CNL_NIL_P(CNL_CADDR(CNL_CAR(bind)))){
 							targ = CNL_CDDDR(targ);
 							if(CNL_NIL_P(targ)){
-								ret = cnl_make_undef(gc);
+								ret = CNL_NIL;
 								/* ENV POP BEGIN */
 								env = CNL_CDR(env);
 								if(CNL_PAIR_P(env)){
@@ -528,7 +532,7 @@ CNL_OBJ* cnl_eval(CNL_GC *gc,CNL_OBJ *bind,CNL_OBJ *obj){
 					/* ENV POP END */
 					/* SYNTAX sweep END */
 				}else{
-					ret = cnl_make_undef(gc);
+					ret = CNL_NIL;
 					/* ENV POP BEGIN */
 					env = CNL_CDR(env);
 					if(CNL_PAIR_P(env)){
@@ -542,6 +546,53 @@ CNL_OBJ* cnl_eval(CNL_GC *gc,CNL_OBJ *bind,CNL_OBJ *obj){
 						ret = CNL_NIL;
 					}
 					/* ENV POP END */
+				}
+			}else if(CNL_MACRO_P(CNL_CADAR(bind))){
+				if(CNL_NUMBER(CNL_CAAR(bind)) == 1){
+					CNL_OBJ* macro = CNL_CADAR(bind);
+					CNL_OBJ* names = CNL_CADDR(macro);
+					CNL_OBJ* values = CNL_CDR(targ);
+					bind = CNL_CAR(macro);
+					args = CNL_NIL;
+					int flag;
+					while(CNL_PAIR_P(bind)){
+						flag = 0;
+						tmp = names;
+						while(CNL_PAIR_P(tmp)){
+							if(cnl_symbol_equal_p(CNL_CAAR(bind),CNL_CAR(tmp))){
+								flag = 1;
+							}
+							tmp = CNL_CDR(tmp);
+						}
+						if(! flag){
+							args = cnl_cons(gc,CNL_CAR(bind),args);
+						}
+						bind = CNL_CDR(bind);
+					}
+					while(CNL_PAIR_P(names)){
+						if(CNL_PAIR_P(values)){
+							args = cnl_cons(gc,cnl_cons(gc,CNL_CAR(names),CNL_CAR(values)),args);
+							values = CNL_CDR(values);
+						}else{
+							args = cnl_cons(gc,cnl_cons(gc,CNL_CAR(names),CNL_NIL),args);
+						}
+						names = CNL_CDR(names);
+					}
+					if(! CNL_NIL_P(names)){
+						args = cnl_cons(gc,cnl_cons(gc,names,values),args);
+					}
+					bind = args;
+					/* ENV PUSH BEGIN */
+					bind = cnl_cons(gc,cnl_cons(gc,cnl_make_number(gc,1),cnl_cons(gc,cnl_make_syntax(gc,CNL_SYNTAX_BEGIN),CNL_NIL)),bind);
+					targ = cnl_cons(gc,cnl_make_symbol(gc,"begin"),CNL_CDDDR(macro));
+					env = cnl_cons(gc,cnl_cons(gc,bind,targ),env);
+					/* ENV PUSH END */
+				}else{
+					/* ENV PUSH BEGIN */
+					targ = CNL_CADDR(CNL_CAR(bind));
+					bind = cnl_cons(gc,cnl_cons(gc,cnl_make_number(gc,0),CNL_NIL),CNL_CDR(bind));
+					env = cnl_cons(gc,cnl_cons(gc,bind,targ),CNL_CDR(env));
+					/* ENV PUSH END */
 				}
 			}else{
 				int i;
@@ -634,7 +685,7 @@ CNL_OBJ* cnl_eval(CNL_GC *gc,CNL_OBJ *bind,CNL_OBJ *obj){
 				tmp = CNL_CDR(tmp);
 			}
 			if(! find){
-				ret = cnl_make_undef(gc);
+				ret = CNL_NIL;
 			}
 			/* ENV POP BEGIN */
 			env = CNL_CDR(env);

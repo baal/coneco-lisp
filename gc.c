@@ -72,7 +72,7 @@ void cnl_gc_sweep(CNL_GC *gc,struct _CNL_OBJ *env){
 	while(! CNL_NIL_P(obj)){
 		if((obj->type & 0x10) == 0x10){
 			obj->type &= 0xEF;
-			if(CNL_PAIR_P(obj) || CNL_PROC_P(obj)){
+			if(CNL_PAIR_P(obj) || CNL_PROC_P(obj) || CNL_MACRO_P(obj)){
 				CNL_OBJ *car = CNL_CAR(obj);
 				CNL_OBJ *cdr = CNL_CDR(obj);
 				if(CNL_NIL_P(car)){

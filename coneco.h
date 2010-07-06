@@ -10,8 +10,9 @@
 #define CNL_NUMBER_P(x) (((x) == CNL_NIL) ? 0 : CNL_TYPE(x) == CNL_TYPE_NUMBER)
 #define CNL_FUNC_P(x) (((x) == CNL_NIL) ? 0 : CNL_TYPE(x) == CNL_TYPE_FUNC)
 #define CNL_PROC_P(x) (((x) == CNL_NIL) ? 0 : CNL_TYPE(x) == CNL_TYPE_PROC)
-#define CNL_CAR(x) ((CNL_PAIR_P(x) || CNL_PROC_P(x)) ? ((CNL_OBJ*)(x)->o.pair.car) : CNL_NIL)
-#define CNL_CDR(x) ((CNL_PAIR_P(x) || CNL_PROC_P(x)) ? ((CNL_OBJ*)(x)->o.pair.cdr) : CNL_NIL)
+#define CNL_MACRO_P(x) (((x) == CNL_NIL) ? 0 : CNL_TYPE(x) == CNL_TYPE_MACRO)
+#define CNL_CAR(x) ((CNL_PAIR_P(x) || CNL_PROC_P(x) || CNL_MACRO_P(x)) ? ((CNL_OBJ*)(x)->o.pair.car) : CNL_NIL)
+#define CNL_CDR(x) ((CNL_PAIR_P(x) || CNL_PROC_P(x) || CNL_MACRO_P(x)) ? ((CNL_OBJ*)(x)->o.pair.cdr) : CNL_NIL)
 #define CNL_CAAR(x) CNL_CAR(CNL_CAR(x))
 #define CNL_CADR(x) CNL_CAR(CNL_CDR(x))
 #define CNL_CDAR(x) CNL_CDR(CNL_CAR(x))
@@ -27,8 +28,8 @@
 #define CNL_SYNTAX(x) ((x)->o.number)
 
 enum CNL_TYPE {
-	CNL_TYPE_UNDEF,
 	CNL_TYPE_SYNTAX,
+	CNL_TYPE_MACRO,
 	CNL_TYPE_FUNC,
 	CNL_TYPE_PROC,
 	CNL_TYPE_PAIR,
@@ -70,7 +71,6 @@ CNL_GC *cnl_gc;
 
 void cnl_debug_print(CNL_OBJ *obj);
 CNL_OBJ* cnl_cons(CNL_GC *gc,CNL_OBJ *left,CNL_OBJ *right);
-CNL_OBJ* cnl_make_undef(CNL_GC *gc);
 CNL_OBJ* cnl_make_number(CNL_GC *gc,long n);
 CNL_OBJ* cnl_make_function(CNL_GC *gc,CNL_OBJ* (*f)(CNL_GC*,CNL_OBJ*));
 CNL_OBJ* cnl_make_proc(CNL_GC *gc,CNL_OBJ* bind,CNL_OBJ* targ);
@@ -79,6 +79,7 @@ CNL_OBJ* cnl_make_syntax(CNL_GC *gc,enum CNL_SYNTAX s);
 CNL_OBJ* cnl_make_default_binds(CNL_GC *gc);
 int cnl_symbol_equal_p(CNL_OBJ *s1,CNL_OBJ *s2);
 CNL_OBJ* cnl_func_call(CNL_GC *gc,CNL_OBJ *s);
+CNL_OBJ* cnl_func_macro(CNL_GC *gc,CNL_OBJ *args);
 CNL_OBJ* cnl_func_cons(CNL_GC *gc,CNL_OBJ *args);
 CNL_OBJ* cnl_func_car(CNL_GC *gc,CNL_OBJ *args);
 CNL_OBJ* cnl_func_cdr(CNL_GC *gc,CNL_OBJ *args);
